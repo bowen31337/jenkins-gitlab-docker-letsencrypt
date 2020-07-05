@@ -1,0 +1,52 @@
+version: '3'
+services:
+  gitlab:
+    image: gitlab/gitlab-ce:latest
+    container_name: ${GITLAB_CONTAINER_NAME}
+    hostname: ${GITLAB_DOMAIN}
+    restart: always
+    volumes:
+      - '${GITLAB_DATA_PATH}/config:/etc/gitlab'
+      - '${GITLAB_DATA_PATH}/logs:/var/log/gitlab'
+      - '${GITLAB_DATA_PATH}/data:/var/opt/gitlab'
+    environment:
+      VIRTUAL_HOST: ${GITLAB_DOMAIN}
+      LETSENCRYPT_HOST: ${GITLAB_DOMAIN}
+      LETSENCRYPT_EMAIL: ${LETSENCRYPT_EMAIL} 
+      GITLAB_OMNIBUS_CONFIG: |
+        registry_external_url 'https://${GITLAB_DOMAIN}'
+        gitlab_rails['gitlab_shell_ssh_port'] = 2289
+        gitlab_rails['smtp_enable'] = true
+        gitlab_rails['smtp_address'] = 'mail.yourdomainname.com'
+        gitlab_rails['smtp_port'] = 587
+        gitlab_rails['smtp_user_name'] = 'noreply@yourdomainname.com'
+        gitlab_rails['smtp_password'] = 'yourpassword'
+        gitlab_rails['smtp_domain'] = 'yourdomainname.com'
+        gitlab_rails['smtp_authentication'] = 'login'
+        gitlab_rails['smtp_enable_starttls_auto'] = true
+        gitlab_rails['smtp_tls'] = false
+        user['git_user_email'] = 'gitlab@yourdomainname.com'
+        gitlab_rails['gitlab_email_from'] = 'gitlab@yourdomainname.com'
+        gitlab_rails['gitlab_email_display_name'] = 'Gitlab'
+        gitlab_rails['gitlab_email_reply_to'] = 'noreply@yourdomainname.com'
+    ports:
+        - '2289:22'
+
+  jenkins:
+    image: jenkins/jenkins:lts
+    container_name: ${JENKINS_CONTAINER_NAME}
+    restart: always
+    ports:
+      - '50000:50000'
+    volumes:
+      - '${JENKINS_DATA_PATH}/jenkins_home:/var/jenkins_home'
+    environment:
+      VIRTUAL_HOST: ${JENKINS_DOMAIN}
+      VIRTUAL_PORT: 8080
+      LETSENCRYPT_HOST: ${JENKINS_DOMAIN}
+      LETSENCRYPT_EMAIL: ${LETSENCRYPT_EMAIL} 
+
+networks:
+  default:
+    external:
+      name: ${NETWORK}
